@@ -15,7 +15,7 @@ typedef struct Node{
 
 typedef struct DList{
     PNode first;
-    PNode next;
+    PNode last;
     int size;
 }List;
 
