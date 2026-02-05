@@ -1,8 +1,9 @@
-#include"../include/Dlist.h"
+#include"../include/DCList.h"
 
 int main(){
     List mylist;
-    InitDList(&mylist);
+    InitDCList(&mylist);
+
 
     PNode p = NULL;
     int select = 1;

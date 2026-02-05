@@ -1,13 +1,11 @@
-#include"../include/Dlist.h"
+#include"../include/DCList.h"
 
-
-void InitDList(List* list){
+void InitDCList(List* list){
     Node *s = (Node*)malloc(sizeof(Node));
     assert(s!=NULL);
     list->first = list->last = s;
-    list->last->next = NULL;
-    list->first->prio = NULL;
-    list->size = 0;
+    list->first->prio = list->last;
+    list->last->next = list->first;
 }
 Node* _buynode(ElementType x){
     Node *s = (Node*)malloc(sizeof(Node));
@@ -18,82 +16,77 @@ Node* _buynode(ElementType x){
 }
 void push_back(List* list, ElementType x){
     Node *s = _buynode(x);
+    s->next = list->last->next;
+    s->next->prio = s;
     s->prio = list->last;
     list->last->next = s;
+
     list->last = s;
     list->size++;
+
 }
 void push_front(List* list, ElementType x){
     Node *s = _buynode(x);
-    if(list->first == list->last)
-    {
-        // s->prio = list->first;
-        // list->first->next = s;
-        list->last = s;
-    }
-    else{
-        s->next = list->first->next;
-        s->next->prio = s;
-    }
+    s->next = list->first->next;
+    s->next->prio = s;
     s->prio = list->first;
-    list->first->next = s;
-
+    list->first->next = s;    if(list->first == list->last)
+        list->last = s;
     list->size++;
 }
 void show_list(List* list){
     Node *p = list->first->next;
-    while(p!=NULL){
+    while(p!=list->first){
         printf("%d-->", p->data);
         p = p->next;
     }
     printf("Nul.\n");
-
 }
 void pop_back(List* list){
-    if(list->size==0)
-        return;
-    Node *p = list->first;
-    while(p->next!=list->last) p = p->next;
+    if(list->size == 0) return;
 
-    free(list->last);
-    list->last = p;
-    list->last->next = NULL;
+    Node *p = list->last;
+    list->last = list->last->prio;
+
+    p->next->prio = p->prio;
+    p->prio->next = p->next;
+    free(p);
     list->size--;
 }
 void pop_front(List* list){
-    if(list->size == 0)
-        return;
-    Node *p = list->first->next;
-    if(p->next==NULL){
-        list->last = list->first;
-        list->last->next = NULL;
+    if(list->size == 0) return;
 
-    }else{
-        p->next->prio = list->first;
-        list->first->next = p->next;
-    }
-    free(p);
+    Node *p = list->first->next;
+    p->next->prio = p->prio;
+    p->prio->next = p->next;
+    if(list->size == 1)
+        list->last = list->first;
     list->size--;
 }
 void insert_val(List* list, ElementType x){
     Node *p = list->first;
-    while(p->next!=NULL && p->next->data < x){
+    while ((p->next!=list->last && (p->next->data) < x)) 
         p = p->next;
-    }
-    if(p->next == NULL){
+    if(p->next == list->last && p->next->data < x)
         push_back(list, x);
-    }
     else{
         Node *s = _buynode(x);
         s->next = p->next;
-        s->next->prio = p;
+        s->next->prio = s;
+        s->prio = p;
         p->next = s;
         list->size++;
     }
-}
+    
+ }
 PNode find_val(List* list, ElementType key){
+    // if(list->size == 0) return NULL;
+
     Node *p = list->first->next;
-    while(p!=NULL && p->data!=key) p = p->next;
+    while(p!=list->first && p->data!=key)
+        p = p->next;
+    if(p == list->first)
+        return NULL;
     return p;
 }
 int length(List* list){
@@ -101,63 +94,65 @@ int length(List* list){
 }
 void delete_val(List* list, ElementType key){
     if(list->size == 0) return;
+
     Node *p = find_val(list, key);
-    if(p==NULL){
-        printf("要删除的值不存在.\n");
+
+    if(p == NULL){
+        printf("要删除的数据不存在.\n");
         return;
     }
-    if(p == list->last){
-        list->last = p->prio;
-        list->last->next = NULL;
-
-    }
+    if(p == list->last) 
+        pop_back(list);
     else{
         p->next->prio = p->prio;
         p->prio->next = p->next;
+        free(p);
+        list->size--;
     }
-    free(p);
-    list->size--;
+
 }
 void sort(List* list){
-    if(list->size == 0 || list->size == 1) return;
-
+    if(list->size == 0|| list->size == 1)
+        return;
     Node *s = list->first->next;
     Node *q = s->next;
-
-    list->last = s;
     list->last->next = NULL;
+    list->last = s;
+    list->last->next = list->first;
+    list->first->prio = list->last;
 
     while(q!=NULL){
         s = q;
         q = q->next;
-
         Node *p = list->first;
-        while(p->next!=NULL && (p->next->data) < (s->data)){
+        while ((p->next!=list->last && (p->next->data) < s->data)) 
             p = p->next;
-        }
-        if(p->next == NULL)
-        {
-            s->next = NULL;
-            s->prio = list->last;
-            list->last->next = s;
-            list->last = s;
-        }
+        if(p->next == list->last && p->next->data < s->data)
+            {
+                s->next = list->last->next;
+                s->next->prio = s;
+                s->prio = list->last;
+                list->last->next = s;
+                list->last = s;
+
+            }
         else{
             s->next = p->next;
-            s->next->prio = s; //插入时不是 “先断开”，而是 “用新的指向覆盖旧的指向”，这个过程会自动完成 “断开” 的效果。
+            s->next->prio = s;
             s->prio = p;
             p->next = s;
         }
     }
 }
 void reverse(List* list){
-    if(list->size == 0 || list->size == 1) return;
-
+    if(list->size == 0|| list->size == 1)
+        return;
     Node *p = list->first->next;
     Node *q = p->next;
-
-    list->last = p;
     list->last->next = NULL;
+    list->last = p;
+    list->last->next = list->first;
+    list->first->prio = list->last;
 
     while (q!=NULL)
     {
@@ -166,7 +161,6 @@ void reverse(List* list){
 
         p->next = list->first->next;
         p->next->prio = p;
-        p->prio = list->first;
         list->first->next = p;
     }
     
@@ -175,18 +169,14 @@ void clear(List* list){
     if(list->size == 0) return;
 
     Node *p = list->first->next;
-    while(p!=NULL){
-        if(p == list->last){
-            list->last = list->first;
-            list->last->next = NULL;
-        }
-        else{
-            p->next->prio = list->first;
-            list->first->next = p->next;
-        }
+    while(p!=list->first){
+        p->next->prio = list->first;
+        list->first->next = p->next;
         free(p);
         p = list->first->next;
+        
     }
+    list->last = list->first;
     list->size = 0;
 }
 void destroy(List* list){
